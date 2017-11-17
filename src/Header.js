@@ -1,9 +1,16 @@
 import React, { Component } from 'react'
 import searchImg from './images/search.png'
+import Source from './Source'
 
 class Header extends Component {
   constructor(props) {
     super(props)
+
+    this.handleSelectFeedHeader = this.handleSelectFeedHeader.bind(this)
+  }
+
+  handleSelectFeedHeader(name) {
+    this.props.onSelectFeed(name)
   }
 
   render() {
@@ -13,15 +20,11 @@ class Header extends Component {
           <section className="container">
             <a href="#"><h1>Feedr</h1></a>
             <nav>
-              <ul>
-                <li><a href="#">News Source: <span>Source Name</span></a>
-                  <ul>
-                      <li><a href="#">Source 1</a></li>
-                      <li><a href="#">Source 2</a></li>
-                      <li><a href="#">Source 3</a></li>
-                  </ul>
-                </li>
-              </ul>
+              <Source
+                selectedFeed={this.props.selectedFeed}
+                availableFeeds={this.props.availableFeeds}
+                onSelectFeed={this.handleSelectFeedHeader}
+              />
               <section id="search">
                 <input type="text" name="name" value="" />
                 <a href="#"><img src={searchImg} alt="" /></a>
