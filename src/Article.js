@@ -2,15 +2,25 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 
 class Article extends Component {
+  constructor(props) {
+    super(props)
+
+    this.handleClick = this.handleClick.bind(this)
+  }
+
+  handleClick() {
+    this.props.onClickArticle(this.props.id)
+  }
+
   render() {
     return (
       <div>
-        <article className="article">
+        <article className="article" onClick={this.handleClick}>
           <section className="featuredImage">
             <img src={this.props.image} alt="" />
           </section>
           <section className="articleContent">
-              <a href={this.props.url}><h3>{this.props.title}</h3></a>
+              <h3>{this.props.title}</h3>
               <h6>{this.props.category}</h6>
               <span className="articleDate">{this.props.date}</span>
           </section>
