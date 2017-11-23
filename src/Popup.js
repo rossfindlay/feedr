@@ -1,4 +1,5 @@
 import React, { Component } from 'react'
+import moment from 'moment'
 
 class Popup extends Component {
   constructor(props) {
@@ -15,13 +16,17 @@ class Popup extends Component {
     if(this.props.showPopup) {
       return (
         <div className="popUp">
-          <a href="#" className="closePopUp" onClick={this.handleClick}>X</a>
+          <a className="closePopUp" onClick={this.handleClick}>X</a>
           <div className="container">
-            <h1>{this.props.popupTitle}</h1>
+            <h1>{this.props.popupData.title}</h1>
             <p>
-              {this.props.popupContent}
+              {this.props.popupData.content}
             </p>
-            <a href={this.props.popupUrl} className="popUpAction" target="_blank">Read more from source</a>
+            <p>
+              Published: {moment(this.props.popupData.date).format("dddd, MMMM Do YYYY h:mm a")}
+            </p>
+            <img className="popUpImage" src={this.props.popupData.image}/>
+            <a href={this.props.popupData.url} className="popUpAction" target="_blank">Read more from source</a>
           </div>
         </div>
       )

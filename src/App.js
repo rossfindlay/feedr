@@ -8,6 +8,8 @@ import Loader from './Loader'
 import Popup from './Popup'
 import uuid from 'uuid'
 import gLogo from './images/g-logo.png'
+import placeholderImage from './images/article_placeholder_1.jpg'
+import moment from 'moment'
 
 class App extends Component {
   constructor(props) {
@@ -15,32 +17,36 @@ class App extends Component {
 
     this.getDiggFeed = this.getDiggFeed.bind(this)
     this.getGuardianFeed = this.getGuardianFeed.bind(this)
-    this.getRedditFeed = this.getRedditFeed.bind(this)
+    this.getMashableFeed = this.getMashableFeed.bind(this)
     this.getNewYorkTimesFeed = this.getNewYorkTimesFeed.bind(this)
 
     this.handleArticleClick = this.handleArticleClick.bind(this)
     this.handleSelectFeedApp = this.handleSelectFeedApp.bind(this)
     this.displayFeed = this.displayFeed.bind(this)
     this.handlePopupClose = this.handlePopupClose.bind(this)
+    this.handleShowSearchApp = this.handleShowSearchApp.bind(this)
+    this.handleEnterKeyApp = this.handleEnterKeyApp.bind(this)
+    this.handleSearchText = this.handleSearchText.bind(this)
   }
 
   state = {
     showLoader: false,
     showPopup: false,
-    availableFeeds: [{name: 'digg'},{name: 'guardian tech'}, {name: 'New York Times'}],
+    showSearch: false,
+    showErrorMsg: false,
+    showOpenMsg: false,
+    availableFeeds: [{name: 'digg'}, {name: 'guardian tech'}, {name: 'New York Times'}, {name: 'Mashable'}],
     selectedFeed: {},
     selectedFeedData: [],
-    popupTitle: '',
-    popupContent: '',
-    popupUrl: ''
+    popupData: {},
+    searchText: ''
   }
 
   componentDidMount(){
     this.setState({
       showLoader: false,
+      showOpenMsg: true,
     })
-
-    this.getNewYorkTimesFeed()
 
   }
 
@@ -54,6 +60,12 @@ class App extends Component {
     })
   }
 
+  handleEnterKeyApp() {
+    this.setState({
+      showSearch: false
+    })
+  }
+
   displayFeed() {
     if (this.state.selectedFeed.name === 'digg') {
       this.getDiggFeed()
@@ -61,19 +73,23 @@ class App extends Component {
       this.getGuardianFeed()
     } else if (this.state.selectedFeed.name === 'New York Times') {
       this.getNewYorkTimesFeed()
+    } else if (this.state.selectedFeed.name === 'Mashable') {
+      this.getMashableFeed()
     }
   }
 
-  handleArticleClick(id, title, description, url) {
+  handleArticleClick(id, title, description, url, date) {
     const article = this.state.selectedFeedData.find(article => article.id === id)
     this.setState({
-      popupTitle: article.title,
-      popupContent: article.description,
-      popupUrl: article.url,
+      popupData: {
+        title: article.title,
+        content: article.description,
+        url: article.url,
+        date: article.date,
+        image: article.image[0]
+      },
       showPopup: true
     })
-    console.log(article)
-
   }
 
   handlePopupClose() {
@@ -82,29 +98,58 @@ class App extends Component {
     })
   }
 
+  handleShowSearchApp() {
+    if (this.state.showSearch) {
+      this.setState({
+        showSearch: false
+      })
+    } else {
+      this.setState({
+        showSearch: true
+      })
+    }
+
+  }
+
+  handleSearchText(text) {
+    this.setState({
+      searchText: text
+    })
+  }
+
   getDiggFeed() {
     fetch("https://accesscontrolalloworiginall.herokuapp.com/http://digg.com/api/news/popular.json")
       .then(results => results.json())
       .then(results => {
+        console.log(results.data.feed)
         const articles = results.data.feed.map(article => {
           return (
             {
-              date: article.date_published,
+              date: moment.unix(article.date_published),
               score: article.digg_score,
               title: article.content.title,
               description: article.content.description,
               url: article.content.url,
-              image: article.content.media.images[3].url,
+              image: article.content.media.images.length > 0 ? article.content.media.images.map(image => image.url) : [placeholderImage],
               id: uuid.v4(),
               tags: article.content.tags.map(tag => tag.display_name)
             }
           )
         })
         this.setState({
+          showErrorMsg: false,
+          showOpenMsg: false,
           selectedFeedData: articles,
           showLoader: false,
         })
       })
+      .catch(
+        this.setState({
+          showOpenMsg: false,
+          showLoader: false,
+          showErrorMsg: true,
+        })
+      )
   }
 
   getGuardianFeed() {
@@ -118,35 +163,70 @@ class App extends Component {
         const articles = results.response.results.map(article => {
           return (
             {
-              date: article.webPublicationDate,
+              date: moment(article.webPublicationDate, moment.ISO_8601),
               score: 0,
               title: article.webTitle,
               description: '',
               url: article.webUrl,
-              image: gLogo,
+              image: [gLogo],
               id: uuid.v4(),
               tags: [article.sectionName]
             }
           )
         })
         this.setState({
+          showErrorMsg: false,
+          showOpenMsg: false,
           selectedFeedData: articles,
           showLoader: false
         })
       })
+      .catch(
+        this.setState({
+          showOpenMsg: false,
+          showLoader: false,
+          showErrorMsg: true,
+        })
+      )
   }
 
-  getRedditFeed() {
-    fetch("https://www.reddit.com/api/v1/authorize?client_id=rossf9&response_type=code&state=RANDOM_STRING&redirect_uri=URI&duration=DURATION&scope=SCOPE_STRING")
+  getMashableFeed() {
+    fetch("https://accesscontrolalloworiginall.herokuapp.com/http://mashable.com/api/v1/posts")
       .then(results => results.json())
       .then(results => {
-        console.log(results)
+
+        console.log(results.posts)
+        const articles = results.posts.map(article => {
+          return (
+            {
+              date: moment(article.post_date, moment.ISO_8601),
+              score: article.shares.total,
+              title: article.title,
+              description: article.content.excerpt,
+              url: article.link,
+              image: Object.entries(article.images).map(image => image[1]),
+              id: uuid.v4(),
+              tags: article.topics.map(topic => topic)
+            }
+          )
+        })
+        this.setState({
+          showErrorMsg: false,
+          showOpenMsg: false,
+          selectedFeedData: articles,
+          showLoader: false
+        })
       })
+      .catch(
+        this.setState({
+          showOpenMsg: false,
+          showLoader: false,
+          showErrorMsg: true,
+        })
+      )
   }
 
   getNewYorkTimesFeed() {
-
-
     fetch("https://api.nytimes.com/svc/topstories/v2/home.json?api-key=594e88d819c444659def2f5ae4ce4dc2")
       .then(results => results.json())
       .then(results => {
@@ -157,27 +237,37 @@ class App extends Component {
           const articles = results.results.map(article => {
             return (
               {
-                date: article.published_date,
+                date: moment(article.published_date, moment.ISO_8601),
                 score: 0,
                 title: article.title,
                 description: article.abstract,
                 url: article.short_url,
-                image: 'article.multimedia[1].url',
+                image: article.multimedia.length > 0 ? article.multimedia.map(image => image.url) : [placeholderImage],
                 id: uuid.v4(),
                 tags: article.des_facet
               }
             )
           })
         this.setState({
+          showErrorMsg: false,
           selectedFeedData: articles,
           showLoader: false,
         })
       }
       })
+      .catch(
+        this.setState({
+          showOpenMsg: false,
+          showLoader: false,
+          showErrorMsg: true,
+        })
+      )
+
 
   }
 
   render() {
+    console.log(this.state.selectedFeedData)
     return (
       <div className="App">
         <div>
@@ -185,65 +275,44 @@ class App extends Component {
             selectedFeed={this.state.selectedFeed}
             availableFeeds={this.state.availableFeeds}
             onSelectFeed={this.handleSelectFeedApp}
+            showSearch={this.state.showSearch}
+            onShowSearchApp={this.handleShowSearchApp}
+            onEnterKeyApp={this.handleEnterKeyApp}
+            onTextChangeApp={this.handleSearchText}
           />
           <Loader showLoader={this.state.showLoader}/>
           <Popup
             showPopup={this.state.showPopup}
-            popupTitle={this.state.popupTitle}
-            popupContent={this.state.popupContent}
-            popupUrl={this.state.popupUrl}
+            popupData={this.state.popupData}
             onClosePopup={this.handlePopupClose}
           />
           <section id="main" className="container">
-            {!this.state.selectedFeed.name ? <div>Select a feed to display</div> : <div></div>}
-            {this.state.selectedFeedData.map(article => {
-              return (
-                <Article
-                  key={article.id}
-                  title={article.title}
-                  image={article.image}
-                  score={article.score}
-                  category={article.tags.map(tag => `#${tag} `)}
-                  date={timeSince(article.date)}
-                  url={article.url}
-                  id={article.id}
-                  onClickArticle={this.handleArticleClick}
-                />
-              )
-            })}
+            {this.state.showOpenMsg ? <div className="message">Select a feed to display</div> : <div></div>}
+            {this.state.showErrorMsg ? <div className="message">Error displaying feed</div> : <div></div>}
+            {this.state.selectedFeedData//add sort functino here
+              .filter(article => article.title.toLowerCase().includes(this.state.searchText.toLowerCase()))
+              .map(article => {
+                return (
+                  <Article
+                    key={article.id}
+                    title={article.title}
+                    image={article.image[0]}
+                    score={article.score}
+                    category={article.tags.map(tag => `#${tag} `)}
+                    date={moment(article.date).fromNow()}
+                    url={article.url}
+                    id={article.id}
+                    onClickArticle={this.handleArticleClick}
+                  />
+                )
+              })
+            }
 
           </section>
         </div>
       </div>
     );
   }
-}
-
-function timeSince(date) {
-  date = date * 1000
-  const seconds = Math.floor((new Date() - date) / 1000)
-  let interval = Math.floor(seconds / 31536000)
-
-  if (interval > 1) {
-    return `posted ${interval} years ago`
-  }
-  interval = Math.floor(seconds / 2592000)
-  if (interval > 1) {
-    return `posted ${interval} months ago`
-  }
-  interval = Math.floor(seconds / 86400)
-  if (interval > 1) {
-    return `posted ${interval} days ago`
-  }
-  interval = Math.floor(seconds / 3600)
-  if (interval > 1) {
-    return `posted ${interval} hours ago`
-  }
-  interval = Math.floor(seconds / 60)
-  if (interval > 1) {
-    return `posted ${interval} minutes ago`
-  }
-  return `posted ${Math.floor(seconds)} seconds ago`
 }
 
 export default App;

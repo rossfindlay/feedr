@@ -14,7 +14,7 @@ class Source extends Component {
   render() {
     return (
       <ul>
-        <li><a href="#">News Source: <span>{this.props.selectedFeed.name}</span></a>
+        <li><a>News Source: <span>{this.props.selectedFeed.name}</span></a>
           <ul>
               {this.props.availableFeeds.map(feed => {
                 return (

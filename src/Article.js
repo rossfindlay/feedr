@@ -10,6 +10,7 @@ class Article extends Component {
 
   handleClick() {
     this.props.onClickArticle(this.props.id)
+    window.scrollTo(0, 0)
   }
 
   render() {
@@ -22,7 +23,7 @@ class Article extends Component {
           <section className="articleContent">
               <h3>{this.props.title}</h3>
               <h6>{this.props.category}</h6>
-              <span className="articleDate">{this.props.date}</span>
+              <span className="articleDate">Published {this.props.date}</span>
           </section>
           <section className="impressions">
             {this.props.score}

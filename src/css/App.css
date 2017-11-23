@@ -53,6 +53,10 @@
   background: #fff;
 }
 
+.popUpImage   {
+  width: 50%;
+}
+
 /* Header styles */
 header {
   background-color: #FE052C;
@@ -107,19 +111,38 @@ header #search img {
   display: block;
 }
 
+header #search.active img {
+  width: 10px;
+  display: block;
+  visibility: hidden;
+}
+
+.navBar {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+}
+
+.message {
+  text-align: center;
+  padding-top: 100px;
+  font-size: 30px;
+}
+
 header #search input {
   position: absolute;
   right: 20px;
-  /*top: 10px;*/
+  top: 10px;
   padding: 8px 0;
   width: 0;
-  transition: 0.2s all;
+  transition: 1s all;
   visibility: hidden;
 }
 
 header #search.active input {
   width: 160px;
   padding: 8px 10px;
+  transition: 1s all;
   visibility: visible;
 }
 
