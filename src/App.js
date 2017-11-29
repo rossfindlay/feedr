@@ -7,7 +7,6 @@ import Article from './Article'
 import Loader from './Loader'
 import Popup from './Popup'
 import uuid from 'uuid'
-import gLogo from './images/g-logo.png'
 import placeholderImage from './images/article_placeholder_1.jpg'
 import moment from 'moment'
 
@@ -16,7 +15,6 @@ class App extends Component {
     super(props)
 
     this.getDiggFeed = this.getDiggFeed.bind(this)
-    this.getGuardianFeed = this.getGuardianFeed.bind(this)
     this.getMashableFeed = this.getMashableFeed.bind(this)
     this.getNewYorkTimesFeed = this.getNewYorkTimesFeed.bind(this)
 
@@ -33,9 +31,9 @@ class App extends Component {
     showLoader: false,
     showPopup: false,
     showSearch: false,
-    showErrorMsg: false,
     showOpenMsg: false,
-    availableFeeds: [{name: 'digg'}, {name: 'guardian tech'}, {name: 'New York Times'}, {name: 'Mashable'}],
+    showErrorMsg: false,
+    availableFeeds: [{name: 'digg'}, {name: 'New York Times'}, {name: 'Mashable'}],
     selectedFeed: {},
     selectedFeedData: [],
     popupData: {},
@@ -47,7 +45,6 @@ class App extends Component {
       showLoader: false,
       showOpenMsg: true,
     })
-
   }
 
   handleSelectFeedApp(name) {
@@ -69,8 +66,6 @@ class App extends Component {
   displayFeed() {
     if (this.state.selectedFeed.name === 'digg') {
       this.getDiggFeed()
-    } else if (this.state.selectedFeed.name === 'guardian tech'){
-      this.getGuardianFeed()
     } else if (this.state.selectedFeed.name === 'New York Times') {
       this.getNewYorkTimesFeed()
     } else if (this.state.selectedFeed.name === 'Mashable') {
@@ -108,7 +103,6 @@ class App extends Component {
         showSearch: true
       })
     }
-
   }
 
   handleSearchText(text) {
@@ -121,7 +115,6 @@ class App extends Component {
     fetch("https://accesscontrolalloworiginall.herokuapp.com/http://digg.com/api/news/popular.json")
       .then(results => results.json())
       .then(results => {
-        console.log(results.data.feed)
         const articles = results.data.feed.map(article => {
           return (
             {
@@ -137,65 +130,27 @@ class App extends Component {
           )
         })
         this.setState({
-          showErrorMsg: false,
           showOpenMsg: false,
+          showErrorMsg: false,
           selectedFeedData: articles,
           showLoader: false,
         })
       })
-      .catch(
+      .catch((error) => {
         this.setState({
           showOpenMsg: false,
-          showLoader: false,
           showErrorMsg: true,
+          showLoader: false,
+          selectedFeedData: [],
         })
-      )
-  }
-
-  getGuardianFeed() {
-    fetch("https://content.guardianapis.com/search?q=technology&api-key=781f7809-b149-4290-ac68-48461944bec8")
-      .then(results => results.json())
-      .then(results => {
-        if (!results.response.status === "ok") {
-          return console.log('error')
-        }
-        console.log(results.response.results)
-        const articles = results.response.results.map(article => {
-          return (
-            {
-              date: moment(article.webPublicationDate, moment.ISO_8601),
-              score: 0,
-              title: article.webTitle,
-              description: '',
-              url: article.webUrl,
-              image: [gLogo],
-              id: uuid.v4(),
-              tags: [article.sectionName]
-            }
-          )
-        })
-        this.setState({
-          showErrorMsg: false,
-          showOpenMsg: false,
-          selectedFeedData: articles,
-          showLoader: false
-        })
+        console.log(error)
       })
-      .catch(
-        this.setState({
-          showOpenMsg: false,
-          showLoader: false,
-          showErrorMsg: true,
-        })
-      )
   }
 
   getMashableFeed() {
     fetch("https://accesscontrolalloworiginall.herokuapp.com/http://mashable.com/api/v1/posts")
       .then(results => results.json())
       .then(results => {
-
-        console.log(results.posts)
         const articles = results.posts.map(article => {
           return (
             {
@@ -211,19 +166,21 @@ class App extends Component {
           )
         })
         this.setState({
-          showErrorMsg: false,
           showOpenMsg: false,
+          showErrorMsg: false,
           selectedFeedData: articles,
           showLoader: false
         })
       })
-      .catch(
+      .catch((error) => {
         this.setState({
           showOpenMsg: false,
-          showLoader: false,
           showErrorMsg: true,
+          showLoader: false,
+          selectedFeedData: [],
         })
-      )
+        console.log(error)
+      })
   }
 
   getNewYorkTimesFeed() {
@@ -233,7 +190,6 @@ class App extends Component {
         if (!results.status === "OK") {
           console.log('error')
         } else {
-          console.log(results.results)
           const articles = results.results.map(article => {
             return (
               {
@@ -249,25 +205,25 @@ class App extends Component {
             )
           })
         this.setState({
+          showOpenMsg: false,
           showErrorMsg: false,
           selectedFeedData: articles,
           showLoader: false,
         })
       }
       })
-      .catch(
+      .catch((error) => {
         this.setState({
           showOpenMsg: false,
-          showLoader: false,
           showErrorMsg: true,
+          showLoader: false,
+          selectedFeedData: [],
         })
-      )
-
-
+        console.log(error)
+      })
   }
 
   render() {
-    console.log(this.state.selectedFeedData)
     return (
       <div className="App">
         <div>
@@ -288,15 +244,15 @@ class App extends Component {
           />
           <section id="main" className="container">
             {this.state.showOpenMsg ? <div className="message">Select a feed to display</div> : <div></div>}
-            {this.state.showErrorMsg ? <div className="message">Error displaying feed</div> : <div></div>}
-            {this.state.selectedFeedData//add sort functino here
+            {this.state.showErrorMsg ? <div className="message">Feed failed to load</div> : <div></div>}
+            {this.state.selectedFeedData.sort((a, b) => b.date - a.date)
               .filter(article => article.title.toLowerCase().includes(this.state.searchText.toLowerCase()))
               .map(article => {
                 return (
                   <Article
                     key={article.id}
                     title={article.title}
-                    image={article.image[0]}
+                    image={article.image[1]}
                     score={article.score}
                     category={article.tags.map(tag => `#${tag} `)}
                     date={moment(article.date).fromNow()}
@@ -307,7 +263,6 @@ class App extends Component {
                 )
               })
             }
-
           </section>
         </div>
       </div>

@@ -23,7 +23,7 @@ class Source extends Component {
                     key={feed.name}
 
                   >
-                    <a href="#">{feed.name}</a>
+                    <a>{feed.name}</a>
                   </li>
                 )
               })

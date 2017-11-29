@@ -33,6 +33,7 @@ class Search extends Component {
 
   render() {
     return (
+      <div className="searchContainer">
       <section id={"search" + (this.props.showSearch ? '.active' : '')}>
         <input
           type="text"
@@ -41,8 +42,9 @@ class Search extends Component {
           onChange={this.handleChange}
           onKeyPress={this.handleKeyPress}
         />
-        <a><img src={searchImg} alt="" onClick={this.handleClick}/></a>
+        <a><img id="searchImage" src={searchImg} alt="" onClick={this.handleClick}/></a>
       </section>
+    </div>
     )
   }
 }

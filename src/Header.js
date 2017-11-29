@@ -33,7 +33,7 @@ class Header extends Component {
       <div>
         <header>
           <section className="container">
-            <a href="#"><h1>Feedr</h1></a>
+            <a><h1>Feedr</h1></a>
             <nav className="navBar">
               <Source
                 selectedFeed={this.props.selectedFeed}
