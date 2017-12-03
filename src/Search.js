@@ -10,18 +10,11 @@ class Search extends Component {
     this.handleKeyPress = this.handleKeyPress.bind(this)
   }
 
-  state = {
-    text: ''
-  }
-
   handleClick() {
     this.props.onShowSearch()
   }
 
   handleChange(e) {
-    this.setState({
-      text: e.target.value
-    })
     this.props.onTextChange(e.target.value)
   }
 
@@ -30,15 +23,16 @@ class Search extends Component {
       this.props.onEnterKey()
     }
   }
+  // Great handling of input!
 
   render() {
     return (
       <div className="searchContainer">
-      <section id={"search" + (this.props.showSearch ? '.active' : '')}>
+      <section id="search" className={this.props.showSearch ? 'active' : ''}>
         <input
           type="text"
           name="name"
-          value={this.state.text}
+          value={this.props.searchText}
           onChange={this.handleChange}
           onKeyPress={this.handleKeyPress}
         />
