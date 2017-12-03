@@ -10,6 +10,8 @@ import uuid from 'uuid'
 import placeholderImage from './images/article_placeholder_1.jpg'
 import moment from 'moment'
 
+const availableFeeds = [{name: 'digg'}, {name: 'New York Times'}, {name: 'Mashable'}];
+
 class App extends Component {
   constructor(props) {
     super(props)
@@ -31,30 +33,23 @@ class App extends Component {
     showLoader: false,
     showPopup: false,
     showSearch: false,
-    showOpenMsg: false,
+    showOpenMsg: true,
     showErrorMsg: false,
-    availableFeeds: [{name: 'digg'}, {name: 'New York Times'}, {name: 'Mashable'}],
     selectedFeed: {},
     selectedFeedData: [],
     popupData: {},
     searchText: ''
   }
 
-  componentDidMount(){
-    this.setState({
-      showLoader: false,
-      showOpenMsg: true,
-    })
-  }
-
   handleSelectFeedApp(name) {
-    const chosenFeed = this.state.availableFeeds.find(feed => feed.name === name)
+    const chosenFeed = availableFeeds.find(feed => feed.name === name)
     this.setState({
       selectedFeed: chosenFeed,
       showLoader: true
     },() => {
       this.displayFeed()
     })
+    // Nice abstraction!
   }
 
   handleEnterKeyApp() {
@@ -64,25 +59,36 @@ class App extends Component {
   }
 
   displayFeed() {
+    let getArticles;
     if (this.state.selectedFeed.name === 'digg') {
-      this.getDiggFeed()
+      getArticles = this.getDiggFeed()
     } else if (this.state.selectedFeed.name === 'New York Times') {
-      this.getNewYorkTimesFeed()
+      getArticles = this.getNewYorkTimesFeed()
     } else if (this.state.selectedFeed.name === 'Mashable') {
-      this.getMashableFeed()
+      getArticles = this.getMashableFeed()
     }
+    getArticles.then(articles => {
+      this.setState({
+        showOpenMsg: false,
+        showErrorMsg: false,
+        selectedFeedData: articles,
+        showLoader: false,
+      })
+    })
+    .catch((error) => {
+      this.setState({
+        showOpenMsg: false,
+        showErrorMsg: true,
+        showLoader: false,
+        selectedFeedData: [],
+      })
+      console.log(error)
+    })
   }
 
-  handleArticleClick(id, title, description, url, date) {
-    const article = this.state.selectedFeedData.find(article => article.id === id)
+  handleArticleClick(id) {
     this.setState({
-      popupData: {
-        title: article.title,
-        content: article.description,
-        url: article.url,
-        date: article.date,
-        image: article.image[0]
-      },
+      popupData: id,
       showPopup: true
     })
   }
@@ -112,10 +118,10 @@ class App extends Component {
   }
 
   getDiggFeed() {
-    fetch("https://accesscontrolalloworiginall.herokuapp.com/http://digg.com/api/news/popular.json")
+    return fetch("https://accesscontrolalloworiginall.herokuapp.com/http://digg.com/api/news/popular.json")
       .then(results => results.json())
       .then(results => {
-        const articles = results.data.feed.map(article => {
+        return results.data.feed.map(article => {
           return (
             {
               date: moment.unix(article.date_published),
@@ -129,29 +135,14 @@ class App extends Component {
             }
           )
         })
-        this.setState({
-          showOpenMsg: false,
-          showErrorMsg: false,
-          selectedFeedData: articles,
-          showLoader: false,
-        })
-      })
-      .catch((error) => {
-        this.setState({
-          showOpenMsg: false,
-          showErrorMsg: true,
-          showLoader: false,
-          selectedFeedData: [],
-        })
-        console.log(error)
       })
   }
 
   getMashableFeed() {
-    fetch("https://accesscontrolalloworiginall.herokuapp.com/http://mashable.com/api/v1/posts")
+    return fetch("https://accesscontrolalloworiginall.herokuapp.com/http://mashable.com/api/v1/posts")
       .then(results => results.json())
       .then(results => {
-        const articles = results.posts.map(article => {
+        return results.posts.map(article => {
           return (
             {
               date: moment(article.post_date, moment.ISO_8601),
@@ -165,32 +156,17 @@ class App extends Component {
             }
           )
         })
-        this.setState({
-          showOpenMsg: false,
-          showErrorMsg: false,
-          selectedFeedData: articles,
-          showLoader: false
-        })
-      })
-      .catch((error) => {
-        this.setState({
-          showOpenMsg: false,
-          showErrorMsg: true,
-          showLoader: false,
-          selectedFeedData: [],
-        })
-        console.log(error)
       })
   }
 
   getNewYorkTimesFeed() {
-    fetch("https://api.nytimes.com/svc/topstories/v2/home.json?api-key=594e88d819c444659def2f5ae4ce4dc2")
+    return fetch("https://api.nytimes.com/svc/topstories/v2/home.json?api-key=594e88d819c444659def2f5ae4ce4dc2")
       .then(results => results.json())
       .then(results => {
         if (!results.status === "OK") {
           console.log('error')
         } else {
-          const articles = results.results.map(article => {
+          return results.results.map(article => {
             return (
               {
                 date: moment(article.published_date, moment.ISO_8601),
@@ -204,22 +180,7 @@ class App extends Component {
               }
             )
           })
-        this.setState({
-          showOpenMsg: false,
-          showErrorMsg: false,
-          selectedFeedData: articles,
-          showLoader: false,
-        })
-      }
-      })
-      .catch((error) => {
-        this.setState({
-          showOpenMsg: false,
-          showErrorMsg: true,
-          showLoader: false,
-          selectedFeedData: [],
-        })
-        console.log(error)
+        }
       })
   }
 
@@ -229,7 +190,7 @@ class App extends Component {
         <div>
           <Header
             selectedFeed={this.state.selectedFeed}
-            availableFeeds={this.state.availableFeeds}
+            availableFeeds={availableFeeds}
             onSelectFeed={this.handleSelectFeedApp}
             showSearch={this.state.showSearch}
             onShowSearchApp={this.handleShowSearchApp}
@@ -246,6 +207,7 @@ class App extends Component {
             {this.state.showOpenMsg ? <div className="message">Select a feed to display</div> : <div></div>}
             {this.state.showErrorMsg ? <div className="message">Feed failed to load</div> : <div></div>}
             {this.state.selectedFeedData.sort((a, b) => b.date - a.date)
+              // Great use of array functions!
               .filter(article => article.title.toLowerCase().includes(this.state.searchText.toLowerCase()))
               .map(article => {
                 return (
@@ -254,7 +216,7 @@ class App extends Component {
                     title={article.title}
                     image={article.image[1]}
                     score={article.score}
-                    category={article.tags.map(tag => `#${tag} `)}
+                    category={article.tags.map(tag => `#${tag} `) /* Pretty sure this is how instagram started! */}
                     date={moment(article.date).fromNow()}
                     url={article.url}
                     id={article.id}

@@ -2,15 +2,10 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 
 class Article extends Component {
-  constructor(props) {
-    super(props)
-
-    this.handleClick = this.handleClick.bind(this)
-  }
-
-  handleClick() {
+  handleClick = () => {
     this.props.onClickArticle(this.props.id)
     window.scrollTo(0, 0)
+    // Nice UX
   }
 
   render() {
@@ -24,6 +19,7 @@ class Article extends Component {
               <h3>{this.props.title}</h3>
               <h6>{this.props.category}</h6>
               <span className="articleDate">Published {this.props.date}</span>
+              {/* It's probably better to format the date here in article instead of in the parent */}
           </section>
           <section className="impressions">
             {this.props.score}
@@ -35,7 +31,7 @@ class Article extends Component {
   }
 }
 
-Article.PropTypes = {
+Article.propTypes = {
   title: PropTypes.string.isRequired,
   image: PropTypes.string.isRequired,
   category: PropTypes.string,
